@@ -1,0 +1,20 @@
+{
+  "name": "querylab-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": { "dev": "vite --host 0.0.0.0", "package:helper": "node ../scripts/package-helper.mjs", "predev": "npm run package:helper", "prebuild": "npm run package:helper", "build": "tsc -b && vite build", "prebuild:helper": "npm run package:helper", "build:helper": "tsc -b && vite build --mode helper", "typecheck": "tsc --noEmit", "preview": "vite preview --host 0.0.0.0" },
+  "dependencies": {
+    "@lezer/highlight": "^1.2.1",
+    "@codemirror/autocomplete": "^6.18.7",
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-sql": "^6.9.0",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.37.1",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": { "@types/react": "^19.1.0", "@types/react-dom": "^19.1.0", "@vitejs/plugin-react": "^4.4.1", "typescript": "^5.8.3", "vite": "^6.3.5" }
+}

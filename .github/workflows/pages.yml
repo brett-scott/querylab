@@ -1,0 +1,73 @@
+name: Deploy QueryLab to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            qa/package-lock.json
+      - name: Read GitHub Pages URL settings
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Build the static helper-mode website and Windows download
+        run: npm run build:helper
+        working-directory: frontend
+        env:
+          QUERYLAB_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+      - name: Verify the packaged helper
+        run: python3 scripts/verify-helper-package.py
+      - name: Install browser test tooling
+        working-directory: qa
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Check the actual Pages base path in the browser
+        working-directory: qa
+        run: npx playwright test --config playwright.pages.config.js --grep "static Pages build"
+        env:
+          QUERYLAB_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+      - name: Upload the static website only
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend/dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,23 @@
+# Local credentials and runtime state
+.env
+.env.*
+!.env.example
+.npm-cache/
+.querylab/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+dist/
+playwright-report/
+test-results/
+qa/test-artifacts/
+qa/test-results.json
+qa/helper-test-artifacts/
+qa/helper-test-results.json
+qa/pages-test-artifacts/
+qa/pages-test-results.json
+*.tsbuildinfo
+frontend/public/downloads/
+

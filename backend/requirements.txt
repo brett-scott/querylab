@@ -1,0 +1,6 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+PyMySQL[rsa]==1.1.1
+sqlparse==0.5.3
+httpx==0.28.1
+pytest==8.3.5

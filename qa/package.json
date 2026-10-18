@@ -1,0 +1,7 @@
+{
+  "name": "querylab-evidence-qa",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "playwright test", "test:api": "playwright test api.spec.js", "test:ui": "playwright test workbench.spec.js" },
+  "devDependencies": { "@playwright/test": "^1.58.2" }
+}
