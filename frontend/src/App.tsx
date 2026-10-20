@@ -1,12 +1,17 @@
 ﻿import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, BookOpen, Check, CheckCircle2, ChevronDown, ChevronRight, CircleHelp, Clock3, Code2, Database, FileCode2, Info, KeyRound, Lightbulb, LoaderCircle, Maximize2, MoreHorizontal, Play, RotateCcw, Search, Send, ShieldCheck, Square, Table2, X, XCircle } from 'lucide-react';
-import { ApiError, disconnectHelper, downloadDataset, getHelperStatus, getHelperToken, helperMode, request } from './api';
+import { ApiError, disconnectHelper, downloadDataset, getHelperStatus, getHelperToken, getHelperUrl, helperMode, request } from './api';
 import type { Challenge, ExecutionResult, HelperStatus, Job, ResultSet, Schema, Session } from './api';
 import Dialog from './Dialog';
 import HelperConnection from './HelperConnection';
 import ResultsTable from './ResultsTable';
 import ResultsDivider, { RESULTS_DIVIDER_HEIGHT } from './ResultsDivider';
 import type { SqlEditorHandle } from './SqlEditor';
+import AccountPanel from './accounts/AccountPanel';
+import { useAccount } from './accounts/AccountProvider';
+import { initialChallenge } from './accounts/client';
+import { clearActiveSubmission, completedAttempt, readActiveSubmission, readAssistance, rememberAssistance, saveActiveSubmission } from './accounts/progress';
+import type { SubmissionSnapshot } from './accounts/progress';
 const SqlEditor = lazy(() => import('./SqlEditor'));
 
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -17,7 +22,7 @@ function Logo() { return <span className="brand"><svg viewBox="0 0 36 40" aria-h
 
 export default function App() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [selected, setSelected] = useState<string>(() => new URLSearchParams(window.location.search).get('challenge') ?? 'OS-Q01');
+  const [selected, setSelected] = useState<string>(initialChallenge);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +67,7 @@ export default function App() {
         <button className={library ? 'nav-item active' : 'nav-item'} onClick={() => setLibrary(true)} disabled={busy}>Challenges</button>
       </nav>
       {helperMode ? <button className="connection-button" aria-label="Connection" onClick={() => setConnection(true)}><span className={`status-dot ${session && !expired ? '' : 'status-offline'}`}/><span>{session && !expired ? 'Connected' : 'Connection'}</span></button> : <button className="connection-button" onClick={() => setHelp(true)}><span className={`status-dot ${session && !expired ? '' : 'status-offline'}`}/><span>Workspace help</span></button>}
+      <AccountPanel disabled={busy}/>
     </header>
     {error && !loading && <div className="global-notice" role="alert"><Info size={17}/><span>{error}</span><button className="text-button" onClick={() => helperMode ? setConnection(true) : void initialize()}>Retry connection</button></div>}
     {loading ? <main className="loading-screen"><Logo/><LoaderCircle className="spin" size={23}/><p>Preparing your workbench…</p></main> : challenge ? <Workbench key={challenge.id} challenge={challenge} session={session} expired={expired} onExpired={markExpired} onRenew={() => void renew()} renewing={renewing} onBusy={setBusy} onHelp={() => setHelp(true)} /> : helperMode ? <main className="helper-onboarding"><section className="helper-card"><span className="eyebrow">MIDNIGHT WORKBENCH</span><h1>Your workbench, powered locally.</h1><HelperConnection busy={busy} onPaired={async () => { const ready = await initialize(); if (ready) setConnection(false); return ready; }} onDisconnect={() => { setSession(null); setError(null); }} onStatus={setHelperStatus}/></section></main> : <main className="loading-screen"><Database size={36}/><h1>Your workbench is waiting.</h1><p>We couldn’t load the challenge library.</p><button className="button primary" onClick={() => void initialize()}>Reconnect to QueryLab</button></main>}
@@ -72,6 +78,7 @@ export default function App() {
 }
 
 function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, onBusy, onHelp }: { challenge: Challenge; session: Session | null; expired: boolean; onExpired: () => void; onRenew: () => void; renewing: boolean; onBusy: (busy: boolean) => void; onHelp: () => void }) {
+  const account = useAccount();
   const storageKey = `querylab:draft:${challenge.dataset}:${challenge.id}:v${challenge.version}`;
   const [sqlText, setSqlText] = useState(() => { try { return localStorage.getItem(storageKey) ?? challenge.starter_sql; } catch { return challenge.starter_sql; } });
   const [saved, setSaved] = useState(true);
@@ -79,7 +86,12 @@ function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, 
   const [schemaReadySession, setSchemaReadySession] = useState<Session | null>(null);
   const [schemaReadyRevision, setSchemaReadyRevision] = useState(-1);
   const [schemaError, setSchemaError] = useState<string | null>(null);
-  const [hintCount, setHintCount] = useState(0);
+  const [hintCount, setHintCount] = useState(() => readAssistance(storageKey).hintsUsed);
+  const hintsUsed = useRef(hintCount);
+  hintsUsed.current = Math.max(hintsUsed.current, hintCount);
+  const solutionViewed = useRef(readAssistance(storageKey).solutionViewed);
+  const submissionSnapshot = useRef<SubmissionSnapshot | null>(null);
+  const resumedGrading = useRef(false);
   const [mobilePane, setMobilePane] = useState('editor');
   const [narrowView, setNarrowView] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const [schemaOpen, setSchemaOpen] = useState(false);
@@ -143,6 +155,15 @@ function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, 
     request<Schema>(`/schema?challenge_id=${encodeURIComponent(challenge.id)}`, undefined, controller.signal).then(next => { if (!controller.signal.aborted) { setSchema(next); setSchemaReadySession(session); setSchemaReadyRevision(schemaRevision); } }).catch(failure => { if (controller.signal.aborted || failure instanceof Error && failure.name === 'AbortError') return; setSchemaError(errorMessage(failure)); if (isExpired(failure)) onExpired(); });
     return () => controller.abort();
   }, [challenge.id, challenge.ready, session, schemaRevision, expired, onExpired]);
+  const recordGrading = (result: ExecutionResult) => {
+    const snapshot = submissionSnapshot.current;
+    if (!snapshot || result.mode !== 'submit' || !result.grading) return;
+    submissionSnapshot.current = null;
+    clearActiveSubmission(snapshot.userId);
+    const assistance = readAssistance(storageKey);
+    const attempt = completedAttempt({ ...snapshot, hintsUsed: Math.max(snapshot.hintsUsed, hintsUsed.current, assistance.hintsUsed), solutionViewed: snapshot.solutionViewed || solutionViewed.current || assistance.solutionViewed }, result);
+    if (attempt) account.record(attempt);
+  };
   const poll = async (id: string, mode: 'run' | 'submit') => {
     try {
       const next = await request<Job>(`/jobs/${id}`);
@@ -150,27 +171,35 @@ function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, 
       setJob(next);
       if (next.status === 'queued' || next.status === 'running') { pollingTimer.current = setTimeout(() => void poll(id, mode), 400); return; }
       activeJob.current = null; setCanceling(false);
-      if (next.status === 'completed' && next.result) { if (mode === 'run') { setResult(next.result); setSchemaRevision(count => count + 1); } else setFeedback(next.result); }
+      if (resumedGrading.current) { resumedGrading.current = false; setSchemaRevision(count => count + 1); }
+      if (submissionSnapshot.current) clearActiveSubmission(submissionSnapshot.current.userId);
+      if (next.status === 'completed' && next.result) { if (mode === 'run') { setResult(next.result); setSchemaRevision(count => count + 1); } else { setFeedback(next.result); recordGrading(next.result); } }
       else if (next.status === 'cancelled') setNotice('Execution cancelled. Your SQL draft is unchanged. Reset the workspace if you want to restore practice data.');
       else setExecutionError({ mode, message: next.error?.message ?? 'The SQL job did not complete. Please try again.' });
     } catch (failure) {
       if (!mounted.current) return;
       setExecutionError({ mode, message: `${errorMessage(failure)} Checking has stopped; the SQL job may still be running. Use Cancel before trying again.` });
-      if (isExpired(failure)) { onExpired(); activeJob.current = null; setJob(null); }
+      if (isExpired(failure)) { if (submissionSnapshot.current) clearActiveSubmission(submissionSnapshot.current.userId); onExpired(); activeJob.current = null; setJob(null); }
     }
   };
   const execute = async (mode: 'run' | 'submit') => {
     const sqlToExecute = mode === 'run' ? sqlEditor.current?.getRunSql() ?? sqlText : sqlText;
     if (busy || !challenge.ready || expired || !session || schemaReadySession !== session || schemaReadyRevision !== schemaRevision || !sqlToExecute.trim()) return;
+    submissionSnapshot.current = mode === 'submit' && account.user ? {
+      id: crypto.randomUUID(), userId: account.user.id,
+      challenge: { id: challenge.id, version: challenge.version, title: challenge.title, type: challenge.type, dataset: challenge.dataset },
+      hintsUsed: hintCount, solutionViewed: solutionViewed.current,
+    } : null;
     setPending(true); setTab(mode); setResultsOpen(true); setMobilePane('editor'); setExecutionError(null); setNotice(null); setResultIndex(0);
     if (mode === 'run') setResult(null); else setFeedback(null);
     try {
       const started = await request<{ job_id: string; status: 'queued' }>(`/${mode}`, { challenge_id: challenge.id, sql: sqlToExecute });
       if (!mounted.current) return;
       activeJob.current = started.job_id; setJob({ ...started, result: null, error: null });
+      if (submissionSnapshot.current) saveActiveSubmission(started.job_id, helperMode ? getHelperUrl() : location.origin, submissionSnapshot.current);
       activeMode.current = mode;
       void poll(started.job_id, mode);
-    } catch (failure) { setExecutionError({ mode, message: errorMessage(failure) }); if (isExpired(failure)) onExpired(); }
+    } catch (failure) { submissionSnapshot.current = null; setExecutionError({ mode, message: errorMessage(failure) }); if (isExpired(failure)) onExpired(); }
     finally { if (mounted.current) setPending(false); }
   };
   const cancel = async () => {
@@ -188,12 +217,13 @@ function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, 
         void poll(cancelled.job_id, activeMode.current);
       } else {
         activeJob.current = null;
+        if (submissionSnapshot.current) clearActiveSubmission(submissionSnapshot.current.userId);
         if (cancelled.status === 'failed') {
           setExecutionError({ mode: activeMode.current, message: cancelled.error?.message ?? 'The SQL job failed before cancellation.' });
         } else {
           setNotice(cancelled.status === 'completed' ? 'The execution finished before cancellation.' : 'Execution cancelled. Your SQL draft is unchanged.');
         }
-        if (cancelled.result) { if (cancelled.result.mode === 'run') setResult(cancelled.result); else setFeedback(cancelled.result); }
+        if (cancelled.result) { if (cancelled.result.mode === 'run') setResult(cancelled.result); else { setFeedback(cancelled.result); if (cancelled.status === 'completed') recordGrading(cancelled.result); } }
       }
     }
     catch (failure) {
@@ -210,13 +240,42 @@ function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, 
   };
   const revealSolution = async () => {
     setSolutionLoading(true); setSolutionError(null);
-    try { setSolution(await request(`/challenges/${challenge.id}/solution`)); }
+    try { setSolution(await request(`/challenges/${challenge.id}/solution`)); solutionViewed.current = true; rememberAssistance(storageKey, hintCount, true); }
     catch (failure) { setSolutionError(errorMessage(failure)); if (isExpired(failure)) { if (helperMode) setSolutionDialog(false); onExpired(); } }
     finally { setSolutionLoading(false); }
   };
   useEffect(() => { if (executionError) { setResultsOpen(true); setMobilePane('editor'); } }, [executionError]);
   const schemaReady = schemaReadySession === session && schemaReadyRevision === schemaRevision;
   const available = Boolean(challenge.ready && session && !expired && schemaReady);
+  useEffect(() => {
+    if (!session || expired || !challenge.ready || !account.user || activeJob.current) return;
+    const restored = readActiveSubmission(account.user.id, helperMode ? getHelperUrl() : location.origin, challenge);
+    if (!restored) return;
+    let disposed = false;
+    setPending(true);
+    void request<Job>(`/jobs/${encodeURIComponent(restored.jobId)}`).then(next => {
+      if (disposed || !mounted.current || activeJob.current) return;
+      submissionSnapshot.current = restored.snapshot;
+      setTab('submit'); setResultsOpen(true); setJob(next); setMobilePane('editor');
+      if (next.status === 'running' || next.status === 'queued') {
+        resumedGrading.current = true;
+        activeJob.current = next.job_id; activeMode.current = 'submit'; void poll(next.job_id, 'submit');
+      } else {
+        setSchemaRevision(count => count + 1);
+        clearActiveSubmission(restored.snapshot.userId);
+        if (next.status === 'completed' && next.result) { setFeedback(next.result); recordGrading(next.result); }
+        else setNotice('The previous submission did not complete grading. Submit again when you are ready.');
+      }
+    }).catch(failure => {
+      if (!disposed && mounted.current) {
+        if (failure instanceof ApiError && [401, 404].includes(failure.status)) {
+          clearActiveSubmission(restored.snapshot.userId);
+          setNotice('The previous grading result is no longer available. Your SQL draft is saved; submit again when you are ready.');
+        } else setNotice('The previous grading result could not be checked. Your SQL draft is saved; refresh to try again.');
+      }
+    }).finally(() => { if (!disposed && mounted.current) setPending(false); });
+    return () => { disposed = true; if (mounted.current) setPending(false); };
+  }, [account.user?.id, session, expired, challenge.id]);
   const activeResult = tab === 'run' ? result : feedback;
   const rows = result?.result_sets.reduce((sum, set) => sum + set.rows.length, 0);
   const editorSchema = Object.fromEntries((schema?.tables ?? []).map(table => [table.name, table.columns.map(column => column.name)]));
@@ -246,9 +305,9 @@ function Workbench({ challenge, session, expired, onExpired, onRenew, renewing, 
           {challenge.expected_columns?.length > 0 ? <><p>Return these columns in the stated order. Follow the result-ordering rule in Requirements.</p><div className="column-chips">{challenge.expected_columns.map(column => <code key={column}>{column}</code>)}</div></> : <p>Follow the routine signature, return values and behavior specified in Requirements.</p>}
         </details>
         <div className="guidance">
-          <div className="guidance-actions"><button className="text-action" aria-expanded={hintsOpen} aria-controls="challenge-hints" disabled={!challenge.hints.length} onClick={() => { setHintsOpen(value => !value); if (!hintCount) setHintCount(1); }}><Lightbulb size={19}/>{hintsOpen ? 'Hide hints' : 'Get a hint'}</button>
+          <div className="guidance-actions"><button className="text-action" aria-expanded={hintsOpen} aria-controls="challenge-hints" disabled={!challenge.hints.length} onClick={() => { setHintsOpen(value => !value); if (!hintCount) { setHintCount(1); rememberAssistance(storageKey, 1, solutionViewed.current); } }}><Lightbulb size={19}/>{hintsOpen ? 'Hide hints' : 'Get a hint'}</button>
           <details className="more-help"><summary>More help</summary><button className="text-action" disabled={!challenge.ready} onClick={() => { setSolutionDialog(true); setSolution(null); }}>View explained solution</button><button className="text-action" onClick={onHelp}>Workspace help</button>{challenge.objective && <p>{challenge.objective}</p>}</details></div>
-          <div id="challenge-hints" hidden={!hintsOpen}>{challenge.hints.slice(0, hintCount).map((hint, index) => <div className="hint" key={index}><span>Hint {index + 1}</span><p>{hint}</p></div>)}{hintCount < challenge.hints.length && <button className="button hint-button" onClick={() => setHintCount(count => count + 1)}><Lightbulb size={17}/>Reveal hint {hintCount + 1} of {challenge.hints.length}</button>}</div>
+          <div id="challenge-hints" hidden={!hintsOpen}>{challenge.hints.slice(0, hintCount).map((hint, index) => <div className="hint" key={index}><span>Hint {index + 1}</span><p>{hint}</p></div>)}{hintCount < challenge.hints.length && <button className="button hint-button" onClick={() => { setHintCount(count => count + 1); rememberAssistance(storageKey, hintCount + 1, solutionViewed.current); }}><Lightbulb size={17}/>Reveal hint {hintCount + 1} of {challenge.hints.length}</button>}</div>
         </div>
       </aside>
       <section className="center-pane" aria-label="SQL workspace">

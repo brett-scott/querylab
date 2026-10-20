@@ -1,5 +1,9 @@
 # QueryLab implementation plan and scope gates
 
+## Current post-MVP iteration
+
+All twelve challenges and Pages deployment are implemented, and the user has reported passing the four hosted acceptance checks. The user waived the pilot and authorized Google accounts/statistics. [The current account plan](accounts-and-statistics.md) defines optional Google sign-in via Supabase, private metadata-only graded history, version-aware progress, idempotent retry, account isolation, and the owner-side activation steps. [Project status](project-status.md) records the latest state. Earlier remaining-nine/hosting/account-deferral statements below are historical MVP planning, not the active backlog.
+
 ## Authorized architecture update
 
 The user also selected the [Focused Midnight Workbench revision](../design/querylab-04-focused-workbench.png) for implementation: compact overview, expandable full task rules, wider editor, on-demand Schema, collapsible Results and Focus mode. This supersedes the permanent expanded three-pane layout described below. Preserve all existing learning/helper behavior. Verification belongs in [focused UI QA](focused-ui-qa.md).

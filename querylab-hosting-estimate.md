@@ -2,13 +2,15 @@
 
 ## Current static-hosting plan — 18 October 2026
 
-The MVP now targets **five simultaneous learners**, each running their own helper and MySQL. The public host serves the static Vite website and Windows helper download; it does not execute SQL, grade submissions or store learner accounts. The current compiled website plus helper ZIP total under 1 MB.
+**Accounts iteration:** the user waived the pilot and selected Google sign-in. The implemented account design adds Supabase authentication and a metadata-only PostgreSQL progress store while retaining Pages and learner-local SQL. Supabase Free currently includes social OAuth, 50,000 monthly active users and a 500 MB database. A$0/month remains a reasonable initial service-cost planning assumption for five simultaneous learners within the free allowances; this is not an uptime or usage guarantee. Low-activity free projects may pause after a week. No paid service has been activated. [Current Supabase pricing](https://supabase.com/pricing), [pausing](https://supabase.com/docs/guides/platform/free-project-pausing), [activation guide](docs/accounts-and-statistics.md).
+
+The MVP now targets **five simultaneous learners**, each running their own helper and MySQL. The public host serves the static Vite website and Windows helper download; it does not execute SQL, grade submissions or store learner accounts. The account-enabled compiled website plus helper ZIP total about 1 MB; account/progress data is stored separately in Supabase.
 
 **Planning estimate: A$0/month for GitHub Pages hosting**, provided the repository/account is eligible. GitHub Free supports Pages from public repositories; private repositories require an eligible paid plan. No custom domain is required when using the included `github.io` URL. A paid GitHub plan, custom domain, development/maintenance work and learner-local Docker resources are excluded from this figure.
 
 GitHub lists a 1 GB published-site limit and soft 100 GB/month bandwidth limit. Five concurrent visitors alone does not determine monthly transfer, but QueryLab's small static build and local SQL execution make free hosting a reasonable starting assumption. Commercial SaaS use is restricted. Sources checked 18 October 2026: [Pages limits and eligibility](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits), [HTTPS support](https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https).
 
-The [Pages deployment workflow and guide](docs/github-pages.md) are prepared. No site deployment, paid plan change or domain purchase has been performed. Public HTTPS/local-helper permissions and clean-computer setup remain to be trialled. Accounts/statistics will require a separate future backend estimate.
+The [Pages deployment workflow and guide](docs/github-pages.md) are prepared. The user reports successful deployment, hosted query/function/procedure runs and submissions, refresh/draft recovery, disconnect/re-pair and a fresh helper installation trial. The pilot has been waived; the next iteration is Google accounts/statistics using the free-plan estimate above. Explicit expiry and broader browser-permission recovery remain open. The agent has not independently inspected the deployment or its billing. No paid plan change or domain purchase was performed by the agent.
 
 ## Historical shared-server estimate — superseded
 

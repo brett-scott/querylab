@@ -39,6 +39,30 @@ kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--bo
 .nav-item, .connection-button { min-height: 44px; display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 0 8px; }
 .nav-item:hover, .connection-button:hover { color: var(--mint); }
 .connection-button { margin-left: auto; }
+.account-button { display:flex; align-items:center; gap:8px; min-height:44px; padding:0 8px; font-size:14px; white-space:nowrap; }
+.account-button:hover { color:var(--mint); }
+.account-panel .account-privacy { font-size:12px; line-height:1.8; color:var(--muted); margin-top:24px; }
+.google-sign-in { margin-top:20px; min-height:44px; }
+.account-identity,.progress-sync { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; font-size:13px; }
+.account-identity>span { min-width:0; overflow-wrap:anywhere; }
+.account-identity button { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+.progress-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:24px 0; }
+.progress-stats>div { padding:16px; background:var(--canvas); border:1px solid var(--border); border-radius:8px; }
+.progress-stats strong { display:block; color:var(--mint); font-size:26px; margin-bottom:8px; }
+.progress-stats span { color:var(--muted); font-size:12px; line-height:1.5; }
+.progress-sync { color:var(--muted); font-size:12px; }
+.progress-sync button { white-space:nowrap; min-height:44px; }
+.progress-list { list-style:none; padding:0; margin:0; }
+.progress-list li { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:14px 0; border-bottom:1px solid var(--border); }
+.progress-list li>div { min-width:0; }
+.progress-list strong { display:block; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.progress-list li>div>span { display:block; color:var(--muted); font-size:12px; line-height:1.7; margin-top:4px; }
+.progress-pass { color:var(--mint); display:flex; align-items:center; gap:5px; font-size:12px; white-space:nowrap; }
+@media(max-width:600px) {
+  .progress-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .progress-list li { align-items:flex-start; gap:10px; }
+  .account-button { font-size:12px; padding:0 4px; gap:5px; }
+}
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); display: inline-block; }
 .status-offline { background: var(--warning); }
 .global-notice { display: flex; align-items: center; gap: 12px; padding: 12px 24px; background: #302c20; color: var(--warning); font-size: 14px; }

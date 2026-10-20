@@ -47,7 +47,7 @@ test('Pages build pairs with the real helper and grades a query, function and pr
   test.skip(process.env.QUERYLAB_PAGES_WITH_HELPER !== '1', 'Opt in with a running local helper and its private .env.helper.');
   const api = process.env.QUERYLAB_HELPER_API_URL || 'http://127.0.0.1:8765';
   const tokenKey = 'querylab:helper:token';
-  const configuration = await readFile(new URL('../../.env.helper', import.meta.url), 'utf8');
+  const configuration = await readFile(process.env.QUERYLAB_PAGES_HELPER_ENV || new URL('../../.env.helper', import.meta.url), 'utf8');
   const code = configuration.match(/^QUERYLAB_PAIRING_TOKEN=(.+)$/m)?.[1].trim().replace(/^(['"])(.*)\1$/, '$2');
   if (!code) throw new Error('Local helper configuration is missing a pairing code.');
   const errors = [];

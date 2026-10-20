@@ -18,6 +18,8 @@ qa/helper-test-artifacts/
 qa/helper-test-results.json
 qa/pages-test-artifacts/
 qa/pages-test-results.json
+qa/accounts-test-artifacts/
+qa/accounts-test-results.json
 *.tsbuildinfo
 frontend/public/downloads/
 

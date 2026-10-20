@@ -69,7 +69,7 @@ The default helper template trusts the local preview origin `http://127.0.0.1:51
 
 ## Cost and release boundary
 
-For the initial five simultaneous learners, free Pages hosting is a reasonable planning assumption when repository/account eligibility permits. The built site and helper ZIP are currently under 1 MB in total, well below the published 1 GB site limit. GitHub documents a soft 100 GB/month bandwidth limit and restricts commercial SaaS use. A custom domain and any paid GitHub plan are separate costs. See [Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
+For the initial five simultaneous learners, free Pages hosting is a reasonable planning assumption when repository/account eligibility permits. The built site and helper ZIP total about 1 MB after adding the account client, well below the published 1 GB site limit. GitHub documents a soft 100 GB/month bandwidth limit and restricts commercial SaaS use. A custom domain and any paid GitHub plan are separate costs. See [Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
 
 Local root/subpath checks do not establish that a public HTTPS page can pair on every browser. Before calling the public MVP released, trial the actual deployed URL on a clean Windows machine: download/install, allow/deny/recover local-network permissions, pair, refresh, recover an expired session, and complete a query, function and procedure. The current source preparation does not itself publish a site or certify that browser journey.
 
@@ -86,4 +86,19 @@ Local root/subpath checks do not establish that a public HTTPS page can pair on 
 
 Browser runs used installed Edge and the source helper at `127.0.0.1:8765`. At each path, the checks covered helper-mode startup without a `?helper=1` flag, ZIP signature/checksum and actual browser download, origin-only launcher address, home navigation, query-string refresh, real pairing, SQL result `42`, saved draft after refresh, and passing submissions for OS-Q01, OS-F01 and OS-P01. No JavaScript page errors or requests for an API on the static website were observed. The latest ignored `qa/pages-test-results.json` records the root-path run; the table records both completed runs.
 
-The GitHub Actions workflows have not been executed on GitHub from this workspace. Public HTTPS/browser permissions and clean-computer installation remain untested. Backend code was unchanged, so the complete backend suite was not rerun for this deployment-path change.
+The GitHub Actions workflows have not been executed or inspected on GitHub from this workspace. Backend code was unchanged, so the complete backend suite was not rerun for this deployment-path change.
+
+## User-confirmed hosted acceptance checks
+
+After deployment preparation, the user reported that the page is deployed and successfully connects to their local helper. They subsequently confirmed all four requested acceptance checks passed:
+
+| Hosted check | Reported result |
+| --- | --- |
+| Run and submit a query, function and procedure challenge | Passed |
+| Refresh with saved SQL draft and connection recovery | Passed |
+| Disconnect and pair again | Passed |
+| Another learner tries the downloaded helper from a fresh installation | Passed |
+
+These are user-reported outcomes, separate from the agent's local automated checks. The deployment URL, browser and permission-prompt behavior were not supplied, and the live site has not been independently inspected from this workspace. Manual disconnect/re-pair does not establish recovery after an actual expired session; explicit expiry and browser permission allow/deny/recovery remain open.
+
+The user subsequently chose to skip the pilot because no testers are available and requested accounts/statistics. Google sign-in is confirmed. See the [Google account/progress setup guide](accounts-and-statistics.md) for this next iteration; the pilot is no longer a prerequisite.

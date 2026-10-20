@@ -1,18 +1,32 @@
 # QueryLab PM scope and delivery status
 
+## Active iteration: Google accounts and statistics
+
+The user explicitly chose to skip the learner pilot because no testers are available, and requested accounts/statistics as the next work. Google sign-in is confirmed. Optional guest practice, Supabase authentication/progress storage, metadata-only tracking and a compact on-demand progress dialog are the engineering defaults for this iteration. The live site URL supplied by the user is https://brett-scott.github.io/querylab/.
+
+Implemented locally: Google PKCE flow and callback at the existing Pages path; sign-out; private versioned attempt history and aggregate statistics; assistance tracking; idempotent cloud retries; account-bound pending sync and same-tab grading recovery. Database grants/RLS and its aggregate view protect each account's rows. The Pages workflow reads public configuration variables and rejects secret/service-role keys in the browser build. See the [activation guide and metric definitions](accounts-and-statistics.md).
+
+Owner-side activation remains: create/configure the Supabase project and Google OAuth client, apply the migration, add public build variables and redeploy. No public project configuration has been supplied, so accounts remain disabled by default. The pilot is waived at the user's request; it is not a blocker to this iteration. Explicit helper expiry and broader browser-permission recovery remain separate unverified coverage, not completed pilot work.
+
+Local verification: 8 unit tests passed; actual PostgreSQL ownership/RLS and aggregate checks passed; account-enabled browser suites passed at both root and project paths, including controlled OAuth responses and real SQL grading; guest Pages/helper suites also passed at both paths. The [account guide](accounts-and-statistics.md#verification-record) records exact evidence and limits. Google/Supabase were not activated remotely and the new GitHub workflow job has not been run on GitHub from this workspace.
+
+The MVP history below retains earlier next-step recommendations; this active iteration supersedes references to a forthcoming pilot or continued deferral of accounts/statistics.
+
 ## GitHub Pages preparation — 18 October 2026
 
 The static Vite website now supports repository subpaths, base-aware helper download/home links, and a GitHub Pages build/deployment workflow. The deployment reads the configured Pages URL, checks the helper package and browser navigation before publishing only the static build. Pull-request verification covers both root and `/querylab/` paths. See the [Pages setup guide](github-pages.md).
 
 Local verification passed both builds and both two-test browser runs, including pairing, SQL, draft refresh and real-MySQL query/function/procedure grading at each path. The Windows archive passed independent integrity and credential-exclusion checks. Exact evidence and untested scope are recorded in the guide.
 
-This is deployment preparation, not evidence of a completed GitHub deployment. Initial planning is five simultaneous learners with SQL execution on their own computers; free Pages hosting is conditional on GitHub plan/repository eligibility. A real public HTTPS pairing trial, clean Windows setup and permission/recovery checks remain release gates. Accounts/statistics remain post-MVP.
+**User-confirmed hosted acceptance checks:** the user reports successful deployment and helper connection, followed by all four requested checks passing: run/submit a query, function and procedure; refresh with draft and connection recovery; disconnect and pair again; and another learner trying the downloaded helper from a fresh installation. These outcomes are user-reported and have not been independently observed by the agent. The deployment URL, browser and permission-prompt behavior were not supplied.
+
+The proposed learner pilot was subsequently waived by the user; accounts/statistics are now the active post-MVP iteration above. Initial hosting planning remains five simultaneous learners with SQL execution on their own computers. Explicit expired-session recovery and browser permission allow/deny/recovery were outside the four reported checks and remain open; the fresh installation trial is user-confirmed.
 
 ## Current curriculum milestone ? 18 October 2026
 
 All twelve exercises are implemented: six queries, three functions and three procedures across the two agreed datasets. The nine previously planned entries now have complete contracts, starters, three hints, explained references and executable grading across public and hidden fixtures. See [curriculum validation](curriculum-validation.md) for current evidence and limits.
 
-The curriculum milestone supersedes the historical three-exercise status below. Remaining release work is learner installation trials, public HTTPS/local-network permissions, static hosting and the revised cost estimate. Accounts and statistics remain post-MVP.
+The curriculum milestone supersedes the historical three-exercise status below. Static hosting and the four hosted acceptance checks above are user-confirmed, and the cost estimate reflects that architecture. The user has now waived the pilot and authorized the accounts/statistics iteration above. Explicit expiry and broader browser-permission recovery remain open coverage.
 
 ## Current helper milestone (supersedes delivery assumptions below)
 

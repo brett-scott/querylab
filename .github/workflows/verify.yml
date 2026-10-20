@@ -8,6 +8,84 @@ permissions:
   contents: read
 
 jobs:
+  accounts:
+    name: Google account client and private statistics
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QUERYLAB_BASE_PATH: /querylab/
+      VITE_SUPABASE_URL: https://querylab-auth.test
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_querylab_browser_test
+      QUERYLAB_ACCOUNTS_WITH_HELPER: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            qa/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Progress and public configuration unit tests
+        run: node --experimental-strip-types --test frontend/tests/progress.test.mjs
+      - name: Verify actual PostgreSQL row security and aggregates
+        run: node scripts/test-progress-database.mjs
+      - name: Build configured account client
+        run: npm run build:helper
+        working-directory: frontend
+      - name: Create private disposable helper configuration
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import secrets
+          content = Path('helper.env.example').read_text()
+          for old, new in {
+              'generate-a-local-pairing-code': secrets.token_hex(32),
+              'generate-a-local-namespace': secrets.token_hex(6),
+              'replace-with-your-local-mysql-password': secrets.token_hex(32),
+          }.items():
+              content = content.replace(old, new)
+          Path('.env.helper').write_text(content)
+          PY
+      - name: Start the real local helper and MySQL
+        run: docker compose --env-file .env.helper -f compose.helper.yaml --profile bundled up --build -d --wait --wait-timeout 180
+      - name: Wait for MySQL compatibility readiness
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request
+          for attempt in range(60):
+              with urllib.request.urlopen('http://127.0.0.1:8765/api/helper/status', timeout=10) as response:
+                  if json.load(response)['database']['connected']:
+                      break
+              time.sleep(2)
+          else:
+              raise SystemExit('Local practice database did not become ready')
+          PY
+      - name: Install browser test tooling
+        working-directory: qa
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Controlled OAuth and REST responses with real SQL grading
+        run: npx playwright test --config playwright.accounts.config.js
+        working-directory: qa
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accounts-test-evidence
+          path: |
+            qa/accounts-test-results.json
+            qa/screenshots/accounts/
+          if-no-files-found: ignore
+      - name: Stop disposable helper services
+        if: always()
+        run: docker compose --env-file .env.helper -f compose.helper.yaml --profile bundled down --volumes
+
   pages:
     name: Static Pages build (${{ matrix.base-path }})
     runs-on: ubuntu-latest

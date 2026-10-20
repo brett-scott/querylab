@@ -2,6 +2,8 @@
 
 Status: Draft for discussion. Created 17 October 2026.
 
+**Current iteration update:** all twelve MVP challenges are implemented and the user reports a working Pages deployment and all four hosted acceptance checks passing. The user has explicitly waived the proposed learner pilot and authorized accounts/statistics next, selecting **Google sign-in**. The [account decision and activation guide](docs/accounts-and-statistics.md) records the implemented engineering defaults, metric contracts and remaining cloud configuration. Historical MVP account/statistics deferrals below describe that original milestone and do not block the new iteration.
+
 Sources: [Project brief](querylab-brief.md) and [MVP review](querylab-mvp-review.md).
 
 Implementation update: three exercises run and nine remain planned. The user subsequently authorized a **hosted static frontend + local helper + learner-owned MySQL**. See [local helper](docs/local-helper.md). This supersedes the earlier zero-installation requirement and shared hosted SQL plan. Twelve validated challenges remain the MVP target; public deployment is future work.
@@ -71,6 +73,8 @@ These need concrete contracts, but the user need not choose low-level mechanisms
 6. Local execution controls are validated: unrelated databases/other helper namespaces remain untouched; sessions stay isolated; cancellation, compatibility checks, limits and cleanup permit recovery. A shared public SQL service is outside this architecture.
 
 ## Decision history
+
+- 18 October 2026: User chose to skip the learner pilot because no testers are available and requested work towards accounts/statistics. Google sign-in was selected. Supabase authentication/progress storage, optional guest practice and metadata-only personal statistics are implementation defaults; no paid cloud service or cloud configuration has been activated.
 
 - 17 October 2026: User authorized Windows helper packaging, a guided prerequisite/startup/code launcher and a website download action. Implemented a standalone preview ZIP with Docker Desktop as its prerequisite. Clean-machine installation and public HTTPS/local-network permission trials remain subsequent gates; no signed installer or new platform support is implied.
 

@@ -2,15 +2,21 @@
 
 Real MySQL practice for intermediate SQL learners, using the selected [Focused Midnight Workbench design](design/querylab-04-focused-workbench.png).
 
-All 12 MVP challenges are implemented across the online-store and inventory datasets: six queries, three functions and three procedures. Each includes executable fixtures, automatic grading, three progressive hints and an explained solution. This remains a local preview; public hosting and installation release checks are separate milestones. See the [curriculum verification](docs/curriculum-validation.md).
+All 12 MVP challenges are implemented across the online-store and inventory datasets: six queries, three functions and three procedures. Each includes executable fixtures, automatic grading, three progressive hints and an explained solution. The user has deployed the website and confirmed hosted query/function/procedure runs and submissions, refresh/draft recovery, disconnect/re-pair and a fresh helper installation trial. The user chose to skip the learner pilot and move into accounts/statistics. See the [hosted acceptance record](docs/github-pages.md#user-confirmed-hosted-acceptance-checks) and [curriculum verification](docs/curriculum-validation.md).
 
 The preferred direction now uses a **static website + local helper + learner-owned MySQL**. Credentials stay on the learner's computer. See the [helper setup guide](docs/local-helper.md) and [helper validation](docs/helper-validation.md). The original all-in-one development mode remains available below.
+
+## Google accounts and saved progress
+
+Optional Google sign-in and a private progress dashboard are implemented using Supabase. The dashboard tracks completed challenges, graded submissions, submission pass rate, assistance use and recent attempts. SQL text, result rows and database/helper credentials stay local. Guest practice remains available, and editor drafts still stay in the current browser.
+
+Enable the feature by configuring Google/Supabase, running the database migration and adding the two public GitHub build variables. Without configuration, the website keeps its existing guest-only behavior. The [account setup guide](docs/accounts-and-statistics.md) uses the live address **https://brett-scott.github.io/querylab/** and explains the exact activation steps. Live Google authorization has not been configured or verified from this workspace.
 
 ## Deploy the website to GitHub Pages
 
 The Vite build and [Pages workflow](.github/workflows/pages.yml) support a project URL such as `https://<account>.github.io/querylab/`. Enable **Settings → Pages → Source: GitHub Actions**, then run **Deploy QueryLab to GitHub Pages** on `main`. Later pushes to `main` deploy automatically. The workflow builds in helper mode, packages the Windows download, checks the actual base path in a browser and publishes only `frontend/dist/`. MySQL and the helper stay on each learner's computer.
 
-See the [deployment and preview guide](docs/github-pages.md) for the full setup, repository eligibility, local checks and remaining public HTTPS validation. No site has been published from this workspace.
+See the [deployment and preview guide](docs/github-pages.md) for the full setup, repository eligibility, local checks and remaining public HTTPS validation. Deployment and helper connection are user-confirmed; the live site has not been independently tested from this workspace.
 
 ## Download the Windows helper
 
@@ -61,7 +67,7 @@ The complete curriculum uses the focused workbench, including inventory routines
 
 Each Run uses one fresh database connection. Finish any explicit transaction within the same script; uncommitted changes roll back when it closes. This milestone allows data changes and stored routines, with table/view/trigger creation deferred. The refund exercise updates a maintained payment-refund summary before inserting its audit row so rollback grading checks a genuine partial-failure case.
 
-The browser never receives database credentials. There are no accounts, learner statistics or durable attempt histories in this milestone.
+The browser never receives database credentials. Guest practice has no durable attempt history. When configured, signed-in accounts store private graded-attempt summaries in Supabase; practice databases remain disposable and SQL drafts remain local.
 
 ## Development layout
 
@@ -108,7 +114,7 @@ The GitHub Actions workflow includes the original backend/API checks and a separ
 
 Compose binds the frontend to loopback and does not expose MySQL or the API directly. This is a development setup. Learner accounts are schema-scoped and executions are bounded, but shared-server MySQL execution needs an independent isolation review before public access. Ten simultaneous learners is a target to measure, not a capacity guarantee.
 
-The helper architecture moves SQL execution costs to each learner's computer. All twelve challenges are implemented. GitHub Pages deployment preparation is in place; public HTTPS-to-loopback browser testing and local setup/recovery trials remain release work. Free static hosting is the current planning assumption for five simultaneous learners; see the [updated hosting estimate](querylab-hosting-estimate.md). Keep both local APIs private. Use one backend worker because anonymous session/job state is process-local.
+The helper architecture moves SQL execution costs to each learner's computer. All twelve challenges are implemented, with deployment and the four hosted acceptance checks user-confirmed. The optional account iteration adds a managed Supabase progress service; explicit expiry and broader browser-permission recovery remain unverified coverage. Free service plans are the current planning assumption for five simultaneous learners; see the [updated hosting estimate](querylab-hosting-estimate.md). Keep both local APIs private. Use one backend worker because anonymous session/job state is process-local.
 
 The engine is pinned to MySQL 8.4.9 for reproducibility; review updates before public deployment. References: [MySQL release notes](https://dev.mysql.com/doc/relnotes/mysql/8.4/en/news-8-4-9.html), [FastAPI container deployment](https://fastapi.tiangolo.com/deployment/docker/).
 

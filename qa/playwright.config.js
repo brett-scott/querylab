@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testIgnore: ['helper.spec.js', 'pages.spec.js'],
+  testIgnore: ['helper.spec.js', 'pages.spec.js', 'accounts.spec.js'],
   timeout: 90000,
   expect: { timeout: 15000 },
   workers: 1,
